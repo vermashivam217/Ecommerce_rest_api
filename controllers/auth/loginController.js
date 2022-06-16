@@ -1,8 +1,9 @@
 import Joi from "joi"
-import { User } from "../../models"
+import { User, RefreshToken } from "../../models"
 import CustomErrorHandler from "../../services/CustomErrorHandler"
 import bcrypt from 'bcrypt'
 import JwtService from '../../services/JwtService'
+import { REFRESH_SECRET } from '../../config'
 
 const loginController = {
     async login(req, res, next) {
@@ -31,7 +32,11 @@ const loginController = {
 
             // generating token
             const accessToken = JwtService.sign({ _id: user._id, role: user.role })
-            res.json({ accessToken })
+            const refresh_Token = JwtService.sign({ _id: user._id, role: user.role }, '1y', REFRESH_SECRET)
+
+            // Database whitelist
+            await RefreshToken.create({ token: refresh_Token });
+            res.json({ accessToken, refresh_Token })
 
         } catch (error) {
             return next(error)
